@@ -1,5 +1,4 @@
 formatting:
-	need to fix PAGEBREAK mechanism
 
 sh:
 	can't always runcmd in child -- breaks cd.
