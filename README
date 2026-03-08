@@ -1,6 +1,7 @@
-NOTE: we have stopped maintaining the x86 version of xv6, and switched
-our efforts to the RISC-V version
-(https://github.com/mit-pdos/xv6-riscv.git)
+This is my (Daniel Feduk's) hard fork of mit-pdos/xv6-public.
+The original developers of xv6 moved on to a RISC-V port called xv6-riscv,
+also hosted on the same GitHub account. 
+===
 
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
@@ -36,10 +37,6 @@ Wolovick, wxdao, Grant Wu, Jindong Zhang, Icenowy Zheng, and Zou Chang Wei.
 
 The code in the files that constitute xv6 is
 Copyright 2006-2018 Frans Kaashoek, Robert Morris, and Russ Cox.
-
-ERROR REPORTS
-
-We don't process error reports (see note on top of this file).
 
 BUILDING AND RUNNING XV6
 
