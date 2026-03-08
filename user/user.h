@@ -1,3 +1,6 @@
+#include "../kern/types.h"
+#include "../kern/stat.h"
+
 struct stat;
 struct rtcdate;
 

@@ -11,4 +11,4 @@ for p in i386-jos-elf-addr2line addr2line; do
 done
 
 # Enable as much pretty-printing as this addr2line can do
-$p $($p -h | grep ' -[aipsf] ' | awk '{print $1}') -e kernel "$@"
+$p $($p -h | grep ' -[aipsf] ' | awk '{print $1}') -e kern/kernel "$@"
