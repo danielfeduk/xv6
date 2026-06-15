@@ -17,6 +17,24 @@ sys_uptime(void)
 }
 
 int
+sys_sleep(int n)
+{
+	u64 ticks0;
+
+	acquire(&tickslock);
+	ticks0 = ticks;
+	while (ticks - ticks0 < n) {
+		if(myproc()->killed) {
+			release(&tickslock);
+			return -1;
+		}
+		sleep(&ticks, &tickslock);
+	}
+	release(&tickslock);
+	return 0;
+}
+
+int
 sys_debugprnt(const char *str)
 {
 	cprintf("cpu %d proc %d says: %s\n", cpuid(), myproc()->pid, str);

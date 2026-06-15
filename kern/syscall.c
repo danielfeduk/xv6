@@ -132,7 +132,7 @@ int (*syscalls[])(void) = {
 	//[SYS_dup]     sys_dup,
 	[SYS_getpid] sys_getpid,
 	//[SYS_sbrk]    sys_sbrk,
-	//[SYS_sleep]   sys_sleep,
+	[SYS_sleep]   sys_sleep,
 	[SYS_debugprnt] sys_debugprnt,
 	[SYS_debugprnt2] sys_debugprnt2,
 	[SYS_uptime] sys_uptime,

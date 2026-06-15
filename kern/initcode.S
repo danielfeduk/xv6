@@ -15,12 +15,9 @@ mov $message, %rdi
 mov $SYS_debugprnt, %rax
 syscall
 
-spinabit:
-mov $SYS_uptime, %rax
+mov $1000, %rdi
+mov $SYS_sleep, %rax
 syscall
-cmp $4000, %rax
-jle spinabit
-
 
 #mov $1, %rdi
 #mov $SYS_kill, %rax
