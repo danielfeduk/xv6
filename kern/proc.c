@@ -106,12 +106,12 @@ found:
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
 	sp -= 4;
-	*(uint *)sp = (uint)trapret;
+	*(u32 *)sp = (u32)trapret;
 
 	sp -= sizeof *p->context;
 	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof *p->context);
-	p->context->eip = (uint)forkret;
+	p->context->eip = (u32)forkret;
 
 	return p;
 }
@@ -158,7 +158,7 @@ userinit(void)
 int
 growproc(int n)
 {
-	uint sz;
+	u32 sz;
 	struct proc *curproc = myproc();
 
 	sz = curproc->sz;
@@ -503,7 +503,7 @@ procdump(void)
 	int i;
 	struct proc *p;
 	char *state;
-	uint pc[10];
+	u32 pc[10];
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->state == UNUSED)
@@ -514,7 +514,7 @@ procdump(void)
 			state = "???";
 		cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
-			getcallerpcs((uint *)p->context->ebp + 2, pc);
+			getcallerpcs((u32 *)p->context->ebp + 2, pc);
 			for (i = 0; i < 10 && pc[i] != 0; i++)
 				cprintf(" %p", pc[i]);
 		}

@@ -58,13 +58,13 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
 static int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
+mappages(pde_t *pgdir, void *va, u32 size, u32 pa, int perm)
 {
 	char *a, *last;
 	pte_t *pte;
 
-	a = (char *)PGROUNDDOWN((uint)va);
-	last = (char *)PGROUNDDOWN(((uint)va) + size - 1);
+	a = (char *)PGROUNDDOWN((u32)va);
+	last = (char *)PGROUNDDOWN(((u32)va) + size - 1);
 	for (;;) {
 		if ((pte = walkpgdir(pgdir, a, 1)) == 0)
 			return -1;
@@ -104,8 +104,8 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 // every process's page table.
 static struct kmap {
 	void *virt;
-	uint phys_start;
-	uint phys_end;
+	u32 phys_start;
+	u32 phys_end;
 	int perm;
 } kmap[] = {
 	{ (void *)KERNBASE, 0, EXTMEM, PTE_W },		   // I/O space
@@ -127,7 +127,7 @@ setupkvm(void)
 	if (P2V(PHYSTOP) > (void *)DEVSPACE)
 		panic("PHYSTOP too high");
 	for (k = kmap; k < &kmap[NELEM(kmap)]; k++)
-		if (mappages(pgdir, k->virt, k->phys_end - k->phys_start, (uint)k->phys_start, k->perm) < 0) {
+		if (mappages(pgdir, k->virt, k->phys_end - k->phys_start, (u32)k->phys_start, k->perm) < 0) {
 			freevm(pgdir);
 			return 0;
 		}
@@ -166,10 +166,10 @@ switchuvm(struct proc *p)
 	mycpu()->gdt[SEG_TSS] = SEG16(STS_T32A, &mycpu()->ts, sizeof(mycpu()->ts) - 1, 0);
 	mycpu()->gdt[SEG_TSS].s = 0;
 	mycpu()->ts.ss0 = SEG_KDATA << 3;
-	mycpu()->ts.esp0 = (uint)p->kstack + KSTACKSIZE;
+	mycpu()->ts.esp0 = (u32)p->kstack + KSTACKSIZE;
 	// setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
 	// forbids I/O instructions (e.g., inb and outb) from user space
-	mycpu()->ts.iomb = (ushort)0xFFFF;
+	mycpu()->ts.iomb = (u16)0xFFFF;
 	ltr(SEG_TSS << 3);
 	lcr3(V2P(p->pgdir)); // switch to process's address space
 	popcli();
@@ -178,7 +178,7 @@ switchuvm(struct proc *p)
 // Load the initcode into address 0 of pgdir.
 // sz must be less than a page.
 void
-inituvm(pde_t *pgdir, char *init, uint sz)
+inituvm(pde_t *pgdir, char *init, u32 sz)
 {
 	char *mem;
 
@@ -193,12 +193,12 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
 int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+loaduvm(pde_t *pgdir, char *addr, struct inode *ip, u32 offset, u32 sz)
 {
-	uint i, pa, n;
+	u32 i, pa, n;
 	pte_t *pte;
 
-	if ((uint)addr % PGSIZE != 0)
+	if ((u32)addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for (i = 0; i < sz; i += PGSIZE) {
 		if ((pte = walkpgdir(pgdir, addr + i, 0)) == 0)
@@ -217,10 +217,10 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 int
-allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+allocuvm(pde_t *pgdir, u32 oldsz, u32 newsz)
 {
 	char *mem;
-	uint a;
+	u32 a;
 
 	if (newsz >= KERNBASE)
 		return 0;
@@ -251,10 +251,10 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
 int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+deallocuvm(pde_t *pgdir, u32 oldsz, u32 newsz)
 {
 	pte_t *pte;
-	uint a, pa;
+	u32 a, pa;
 
 	if (newsz >= oldsz)
 		return oldsz;
@@ -281,7 +281,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 void
 freevm(pde_t *pgdir)
 {
-	uint i;
+	u32 i;
 
 	if (pgdir == 0)
 		panic("freevm: no pgdir");
@@ -311,11 +311,11 @@ clearpteu(pde_t *pgdir, char *uva)
 // Given a parent process's page table, create a copy
 // of it for a child.
 pde_t *
-copyuvm(pde_t *pgdir, uint sz)
+copyuvm(pde_t *pgdir, u32 sz)
 {
 	pde_t *d;
 	pte_t *pte;
-	uint pa, i, flags;
+	u32 pa, i, flags;
 	char *mem;
 
 	if ((d = setupkvm()) == 0)
@@ -360,14 +360,14 @@ uva2ka(pde_t *pgdir, char *uva)
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
 int
-copyout(pde_t *pgdir, uint va, void *p, uint len)
+copyout(pde_t *pgdir, u32 va, void *p, u32 len)
 {
 	char *buf, *pa0;
-	uint n, va0;
+	u32 n, va0;
 
 	buf = (char *)p;
 	while (len > 0) {
-		va0 = (uint)PGROUNDDOWN(va);
+		va0 = (u32)PGROUNDDOWN(va);
 		pa0 = uva2ka(pgdir, (char *)va0);
 		if (pa0 == 0)
 			return -1;

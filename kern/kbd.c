@@ -6,9 +6,9 @@
 int
 kbdgetc(void)
 {
-	static uint shift;
-	static uchar *charcode[4] = { normalmap, shiftmap, ctlmap, ctlmap };
-	uint st, data, c;
+	static u32 shift;
+	static u8 *charcode[4] = { normalmap, shiftmap, ctlmap, ctlmap };
+	u32 st, data, c;
 
 	st = inb(KBSTATP);
 	if ((st & KBS_DIB) == 0)

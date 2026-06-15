@@ -60,7 +60,7 @@ int
 sys_sleep(void)
 {
 	int n;
-	uint ticks0;
+	u32 ticks0;
 
 	if (argint(0, &n) < 0)
 		return -1;
@@ -82,7 +82,7 @@ sys_sleep(void)
 int
 sys_uptime(void)
 {
-	uint xticks;
+	u32 xticks;
 
 	acquire(&tickslock);
 	xticks = ticks;

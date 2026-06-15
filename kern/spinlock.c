@@ -69,17 +69,17 @@ release(struct spinlock *lk)
 
 // Record the current call stack in pcs[] by following the %ebp chain.
 void
-getcallerpcs(void *v, uint pcs[])
+getcallerpcs(void *v, u32 pcs[])
 {
-	uint *ebp;
+	u32 *ebp;
 	int i;
 
-	ebp = (uint *)v - 2;
+	ebp = (u32 *)v - 2;
 	for (i = 0; i < 10; i++) {
-		if (ebp == 0 || ebp < (uint *)KERNBASE || ebp == (uint *)0xffffffff)
+		if (ebp == 0 || ebp < (u32 *)KERNBASE || ebp == (u32 *)0xffffffff)
 			break;
 		pcs[i] = ebp[1];      // saved %eip
-		ebp = (uint *)ebp[0]; // saved %ebp
+		ebp = (u32 *)ebp[0]; // saved %ebp
 	}
 	for (; i < 10; i++)
 		pcs[i] = 0;

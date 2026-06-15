@@ -58,7 +58,7 @@ binit(void)
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
 static struct buf *
-bget(uint dev, uint blockno)
+bget(u32 dev, u32 blockno)
 {
 	struct buf *b;
 
@@ -93,7 +93,7 @@ bget(uint dev, uint blockno)
 
 // Return a locked buf with the contents of the indicated block.
 struct buf *
-bread(uint dev, uint blockno)
+bread(u32 dev, u32 blockno)
 {
 	struct buf *b;
 
