@@ -58,18 +58,48 @@ start32:
   movl    %cr4, %eax
   orl     $(CR4_PSE), %eax
   movl    %eax, %cr4
-  # Use entrypgdir as our initial page table
-  movl    (start-12), %eax
+  # Use pgdir32 as our initial page table
+  movl    (start-32), %eax
   movl    %eax, %cr3
   # Turn on paging.
   movl    %cr0, %eax
   orl     $(CR0_PE|CR0_PG|CR0_WP), %eax
   movl    %eax, %cr0
 
+  mov %cr0, %eax
+  and $(~CR0_PG), %eax
+  mov %eax, %cr0
+  
+  xor %eax, %eax
+  mov (start-24), %eax
+  mov %eax, %cr3
+  mov $MSR_EFER, %ecx
+  rdmsr
+  or $(EFER_LME | EFER_NXE | EFER_SCE), %eax
+  wrmsr
+  mov %cr4, %eax
+  or $(CR4_PAE | CR4_PGE), %eax
+  mov %eax, %cr4
+  mov %cr0, %eax
+  or $(CR0_PG), %eax
+  mov %eax, %cr0
+
+  mov (start-40), %eax
+  lgdt (%eax)
+  ljmpl $0x08, $(yonder)
+  .code64
+  yonder:
+  mov $0x10, %ax
+  mov %ax, %ds
+  mov %ax, %es
+  mov %ax, %ss
+
+
+
   # Switch to the stack allocated by startothers()
-  movl    (start-4), %esp
+  movq	(start-8), %rsp
   # Call mpenter()
-  call	 *(start-8)
+  call	 *(start-16)
 
   movw    $0x8a00, %ax
   movw    %ax, %dx

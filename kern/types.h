@@ -13,4 +13,4 @@ typedef uintptr_t uptr;
 
 #define PERCPU __seg_gs
 
-typedef u32 pde_t
+typedef u64 pde_t;

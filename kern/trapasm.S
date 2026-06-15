@@ -3,30 +3,46 @@
   # vectors.S sends all traps here.
 .globl alltraps
 alltraps:
-  # Build trap frame.
-  pushl %ds
-  pushl %es
-  pushl %fs
-  pushl %gs
-  pushal
-  
-  # Set up data segments.
-  movw $(SEG_KDATA<<3), %ax
-  movw %ax, %ds
-  movw %ax, %es
 
-  # Call trap(tf), where tf=%esp
-  pushl %esp
-  call trap
-  addl $4, %esp
+	pushq %rax
+	pushq %rcx
+	pushq %rdx
+	pushq %rbx
+	pushq %rbp
+	pushq %rsi
+	pushq %rdi
+	pushq %r8
+	pushq %r9
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15	
 
-  # Return falls through to trapret...
+	# what is swapgs
+	# what is xsave
+
+	movq %rsp, %rdi
+	call trap
+
 .globl trapret
 trapret:
-  popal
-  popl %gs
-  popl %fs
-  popl %es
-  popl %ds
-  addl $0x8, %esp  # trapno and errcode
-  iret
+
+	popq %r15	
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %r9
+	popq %r8
+	popq %rdi
+	popq %rsi
+	popq %rbp
+	popq %rbx
+	popq %rdx
+	popq %rcx
+	popq %rax
+	addq $0x10, %rsp # trapno and errcode
+	iretq

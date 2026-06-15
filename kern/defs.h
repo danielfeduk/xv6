@@ -125,7 +125,7 @@ void		swtch(struct context**, struct context*);
 
 // spinlock.c
 void		acquire(struct spinlock*);
-void		getcallerpcs(void*, u32*);
+void		getcallerpcs(u64*);
 int		holding(struct spinlock*);
 void		initlock(struct spinlock*, char*);
 void		release(struct spinlock*);
@@ -138,7 +138,44 @@ void		releasesleep(struct sleeplock*);
 int		holdingsleep(struct sleeplock*);
 void		initsleeplock(struct sleeplock*, char*);
 
+// string/ directory
+
+#include <stddef.h>
+
+void *memcpy(void *__restrict, const void *__restrict, size_t);
+void *memmove(void *, const void *, size_t);
+void *memset(void *, int, size_t);
+int memcmp(const void *, const void *, size_t);
+void *memchr(const void *, int, size_t);
+
+char *strcpy(char *__restrict, const char *__restrict);
+//char *strncpy(char *__restrict, const char *__restrict, size_t);
+
+char *strcat(char *__restrict, const char *__restrict);
+//char *strncat(char *__restrict, const char *__restrict, size_t);
+
+int strcmp(const char *, const char *);
+//int strncmp(const char *, const char *, size_t);
+
+char *strchr(const char *, int);
+char *strrchr(const char *, int);
+
+size_t strcspn(const char *, const char *);
+size_t strspn(const char *, const char *);
+char *strpbrk(const char *, const char *);
+char *strstr(const char *, const char *);
+char *strtok(char *__restrict, const char *__restrict);
+
+size_t strlen(const char*);
+
+
+
+
+// TODO figure out string .h situation
+char*		safestrcpy(char*, const char*, int);
+/*
 // string.c
+
 int		memcmp(const void*, const void*, u32);
 void*		memmove(void*, const void*, u32);
 void*		memset(void*, int, u32);
@@ -146,7 +183,7 @@ char*		safestrcpy(char*, const char*, int);
 int		strlen(const char*);
 int		strncmp(const char*, const char*, u32);
 char*		strncpy(char*, const char*, int);
-
+*/
 // syscall.c
 int		argint(int, int*);
 int		argptr(int, char**, int);
@@ -183,6 +220,7 @@ void		switchuvm(struct proc*);
 void		switchkvm(void);
 int		copyout(pde_t*, u32, void*, u32);
 void		clearpteu(pde_t *pgdir, char *uva);
+void		crossvm_write(pde_t *, void *, void *, size_t);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

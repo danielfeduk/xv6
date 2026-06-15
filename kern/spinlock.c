@@ -25,12 +25,14 @@ void
 acquire(struct spinlock *lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
-	if (holding(lk))
+	if (holding(lk)) {
 		panic("acquire");
+	}
 
 	// The xchg is atomic.
-	while (xchg(&lk->locked, 1) != 0)
-		;
+	while (xchg(&lk->locked, 1) != 0) {
+		asm("pause");
+	}
 
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that the critical section's memory
@@ -38,16 +40,18 @@ acquire(struct spinlock *lk)
 	__sync_synchronize();
 
 	// Record info about lock acquisition for debugging.
+
 	lk->cpu = mycpu();
-	getcallerpcs(&lk, lk->pcs);
+	getcallerpcs(lk->pcs);
 }
 
 // Release the lock.
 void
 release(struct spinlock *lk)
 {
-	if (!holding(lk))
+	if (!holding(lk)) {
 		panic("release");
+	}
 
 	lk->pcs[0] = 0;
 	lk->cpu = 0;
@@ -67,22 +71,20 @@ release(struct spinlock *lk)
 	popcli();
 }
 
-// Record the current call stack in pcs[] by following the %ebp chain.
 void
-getcallerpcs(void *v, u32 pcs[])
+getcallerpcs(uint64_t pcs[])
 {
-	u32 *ebp;
-	int i;
+	uint64_t *rbp;
 
-	ebp = (u32 *)v - 2;
-	for (i = 0; i < 10; i++) {
-		if (ebp == 0 || ebp < (u32 *)KERNBASE || ebp == (u32 *)0xffffffff)
+	__asm__ volatile("movq %%rbp, %0" : "=r"(rbp));
+	memset(pcs, 0, NPCS * (sizeof(uint64_t)));
+
+	for (int i = 0; i < NPCS; i++) {
+		if (rbp == 0 || rbp < (uint64_t *)KERNBASE)
 			break;
-		pcs[i] = ebp[1];      // saved %eip
-		ebp = (u32 *)ebp[0]; // saved %ebp
+		pcs[i] = rbp[1];
+		rbp = *(uint64_t **)rbp;
 	}
-	for (; i < 10; i++)
-		pcs[i] = 0;
 }
 
 // Check whether this cpu is holding the lock.
@@ -103,22 +105,27 @@ holding(struct spinlock *lock)
 void
 pushcli(void)
 {
-	int eflags;
+	u64 rflags;
 
-	eflags = readeflags();
+	if (mycpu()->ncli > 32)
+		panic("pushcli");
+	rflags = readrflags();
 	cli();
-	if (mycpu()->ncli == 0)
-		mycpu()->intena = eflags & FL_IF;
+	if (mycpu()->ncli == 0) {
+		mycpu()->intena = rflags & FL_IF;
+	}
 	mycpu()->ncli += 1;
 }
 
 void
 popcli(void)
 {
-	if (readeflags() & FL_IF)
+	if (readrflags() & FL_IF)
 		panic("popcli - interruptible");
-	if (--mycpu()->ncli < 0)
+	if (--mycpu()->ncli < 0) {
+		// cprintf("popcli reached %d\n", mycpu()->ncli);
 		panic("popcli");
+	}
 	if (mycpu()->ncli == 0 && mycpu()->intena)
 		sti();
 }

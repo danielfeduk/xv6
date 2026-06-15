@@ -11,12 +11,12 @@
 #include "mmu.h"
 #include "proc.h"
 
-struct cpu cpus[NCPU];
+struct cpu cpus[NCPU] = { 0 };
 int ncpu;
 u8 ioapicid;
 
 static u8
-sum(u8 *addr, int len)
+sum(u8 *addr, u64 len)
 {
 	int i, sum;
 
@@ -28,7 +28,7 @@ sum(u8 *addr, int len)
 
 // Look for an MP structure in the len bytes at addr.
 static struct mp *
-mpsearch1(u32 a, int len)
+mpsearch1(u32 a, u64 len)
 {
 	u8 *e, *p, *addr;
 
@@ -77,7 +77,7 @@ mpconfig(struct mp **pmp)
 
 	if ((mp = mpsearch()) == 0 || mp->physaddr == 0)
 		return 0;
-	conf = (struct mpconf *)P2V((u32)mp->physaddr);
+	conf = (struct mpconf *)P2V(mp->physaddr);
 	if (memcmp(conf, "PCMP", 4) != 0)
 		return 0;
 	if (conf->version != 1 && conf->version != 4)
@@ -101,13 +101,14 @@ mpinit(void)
 	if ((conf = mpconfig(&mp)) == 0)
 		panic("Expect to run on an SMP");
 	ismp = 1;
-	lapic = (u32 *)conf->lapicaddr;
+	lapic = (u32 *)P2CM(conf->lapicaddr);
 	for (p = (u8 *)(conf + 1), e = (u8 *)conf + conf->length; p < e;) {
 		switch (*p) {
 		case MPPROC:
 			proc = (struct mpproc *)p;
 			if (ncpu < NCPU) {
 				cpus[ncpu].apicid = proc->apicid; // apicid may differ from ncpu
+				cpus[ncpu].this = &cpus[ncpu];
 				ncpu++;
 			}
 			p += sizeof(struct mpproc);

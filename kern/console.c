@@ -15,9 +15,12 @@
 #include "proc.h"
 #include "x86.h"
 
+#include <stdarg.h>
+#include "string.h"
+
 static void consputc(int);
 
-static int panicked = 0;
+extern int panicked = 0;
 
 static struct {
 	struct spinlock lock;
@@ -25,12 +28,12 @@ static struct {
 } cons;
 
 static void
-printint(int xx, int base, int sign)
+printint(i64 xx, int base, int sign)
 {
 	static char digits[] = "0123456789abcdef";
 	char buf[16];
 	int i;
-	u32 x;
+	u64 x;
 
 	if (sign && (sign = xx < 0))
 		x = -xx;
@@ -54,17 +57,18 @@ void
 cprintf(char *fmt, ...)
 {
 	int i, c, locking;
-	u32 *argp;
 	char *s;
+	va_list ap;
 
+	va_start(ap, fmt);
 	locking = cons.locking;
-	if (locking)
+	if (locking) {
 		acquire(&cons.lock);
+	}
 
 	if (fmt == 0)
 		panic("null fmt");
 
-	argp = (u32 *)(void *)(&fmt + 1);
 	for (i = 0; (c = fmt[i] & 0xff) != 0; i++) {
 		if (c != '%') {
 			consputc(c);
@@ -75,14 +79,16 @@ cprintf(char *fmt, ...)
 			break;
 		switch (c) {
 		case 'd':
-			printint(*argp++, 10, 1);
+			printint(va_arg(ap, int), 10, 1);
 			break;
 		case 'x':
+			printint(va_arg(ap, int), 16, 0);
+			break;
 		case 'p':
-			printint(*argp++, 16, 0);
+			printint(va_arg(ap, u64), 16, 0);
 			break;
 		case 's':
-			if ((s = (char *)*argp++) == 0)
+			if ((s = va_arg(ap, char *)) == 0)
 				s = "(null)";
 			for (; *s; s++)
 				consputc(*s);
@@ -97,16 +103,17 @@ cprintf(char *fmt, ...)
 			break;
 		}
 	}
+	va_end(ap);
 
-	if (locking)
+	if (locking) {
 		release(&cons.lock);
+	}
 }
 
 void
 panic(char *s)
 {
-	int i;
-	u32 pcs[10];
+	u64 pcs[10];
 
 	cli();
 	cons.locking = 0;
@@ -114,9 +121,10 @@ panic(char *s)
 	cprintf("lapicid %d: panic: ", lapicid());
 	cprintf(s);
 	cprintf("\n");
-	getcallerpcs(&s, pcs);
-	for (i = 0; i < 10; i++)
+	getcallerpcs(pcs);
+	for (int i = 0; i < 10; ++i) {
 		cprintf(" %p", pcs[i]);
+	}
 	panicked = 1; // freeze other CPU
 	for (;;)
 		;
@@ -124,7 +132,7 @@ panic(char *s)
 
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
-static u16 *crt = (u16 *)P2V(0xb8000); // CGA memory
+static u16 *crt = (u16 *)P2CM(0xb8000); // CGA memory
 
 static void
 cgaputc(int c)
@@ -170,12 +178,10 @@ consputc(int c)
 			;
 	}
 
-	if (c == BACKSPACE) {
-		uartputc('\b');
-		uartputc(' ');
-		uartputc('\b');
+	/*if(c == BACKSPACE){
+		uartputc('\b'); uartputc(' '); uartputc('\b');
 	} else
-		uartputc(c);
+		uartputc(c);*/
 	cgaputc(c);
 }
 
@@ -193,20 +199,22 @@ void
 consoleintr(int (*getc)(void))
 {
 	int c, doprocdump = 0;
+	// cprintf("consoleintr\n");
 
 	acquire(&cons.lock);
 	while ((c = getc()) >= 0) {
 		switch (c) {
-		case C('P'): // Process listing.
-			// procdump() locks cons.lock indirectly; invoke later
-			doprocdump = 1;
-			break;
-		case C('U'): // Kill line.
-			while (input.e != input.w && input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
-				input.e--;
-				consputc(BACKSPACE);
-			}
-			break;
+			/*		case C('P'):  // Process listing.
+						// procdump() locks cons.lock indirectly; invoke later
+			//			doprocdump = 1;
+						break;
+					case C('U'):  // Kill line.
+						while(input.e != input.w &&
+						      input.buf[(input.e-1) % INPUT_BUF] != '\n'){
+						  input.e--;
+						  consputc(BACKSPACE);
+						}
+						break;*/
 		case C('H'):
 		case '\x7f': // Backspace
 			if (input.e != input.w) {
@@ -221,18 +229,18 @@ consoleintr(int (*getc)(void))
 				consputc(c);
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
 					input.w = input.e;
-					wakeup(&input.r);
+					// wakeup(&input.r);
 				}
 			}
 			break;
 		}
 	}
 	release(&cons.lock);
-	if (doprocdump) {
-		procdump(); // now call procdump() wo. cons.lock held
-	}
+	// if(doprocdump) {
+	//	procdump();  // now call procdump() wo. cons.lock held
+	// }
 }
-
+/*
 int
 consoleread(struct inode *ip, char *dst, int n)
 {
@@ -242,27 +250,27 @@ consoleread(struct inode *ip, char *dst, int n)
 	iunlock(ip);
 	target = n;
 	acquire(&cons.lock);
-	while (n > 0) {
-		while (input.r == input.w) {
-			if (myproc()->killed) {
-				release(&cons.lock);
-				ilock(ip);
-				return -1;
+	while(n > 0){
+		while(input.r == input.w){
+			if(myproc()->killed){
+			  release(&cons.lock);
+			  ilock(ip);
+			  return -1;
 			}
 			sleep(&input.r, &cons.lock);
 		}
 		c = input.buf[input.r++ % INPUT_BUF];
-		if (c == C('D')) { // EOF
-			if (n < target) {
-				// Save ^D for next time, to make sure
-				// caller gets a 0-byte result.
-				input.r--;
+		if(c == C('D')){  // EOF
+			if(n < target){
+			  // Save ^D for next time, to make sure
+			  // caller gets a 0-byte result.
+			  input.r--;
 			}
 			break;
 		}
 		*dst++ = c;
 		--n;
-		if (c == '\n')
+		if(c == '\n')
 			break;
 	}
 	release(&cons.lock);
@@ -278,21 +286,21 @@ consolewrite(struct inode *ip, char *buf, int n)
 
 	iunlock(ip);
 	acquire(&cons.lock);
-	for (i = 0; i < n; i++)
+	for(i = 0; i < n; i++)
 		consputc(buf[i] & 0xff);
 	release(&cons.lock);
 	ilock(ip);
 
 	return n;
 }
-
+*/
 void
 consoleinit(void)
 {
 	initlock(&cons.lock, "console");
 
-	devsw[CONSOLE].write = consolewrite;
-	devsw[CONSOLE].read = consoleread;
+	// devsw[CONSOLE].write = consolewrite;
+	// devsw[CONSOLE].read = consoleread;
 	cons.locking = 1;
 
 	ioapicenable(IRQ_KBD, 0);

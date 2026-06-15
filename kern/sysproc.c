@@ -1,39 +1,34 @@
 #include "types.h"
-#include "x86.h"
 #include "defs.h"
-#include "date.h"
+// this is bad
 #include "param.h"
-#include "memlayout.h"
 #include "mmu.h"
+#include "x86.h"
 #include "proc.h"
 
 int
-sys_fork(void)
+sys_uptime(void)
 {
-	return fork();
+	u64 xticks;
+	acquire(&tickslock);
+	xticks = ticks;
+	release(&tickslock);
+	return xticks;
 }
 
 int
-sys_exit(void)
+sys_debugprnt(const char *str)
 {
-	exit();
-	return 0; // not reached
+	cprintf("cpu %d proc %d says: %s\n", cpuid(), myproc()->pid, str);
+	// panic("um what if we panic here");
+	return 0;
 }
 
 int
-sys_wait(void)
+sys_debugprnt2(u64 n)
 {
-	return wait();
-}
-
-int
-sys_kill(void)
-{
-	int pid;
-
-	if (argint(0, &pid) < 0)
-		return -1;
-	return kill(pid);
+	cprintf("cpu %d proc %d says: %d\n", cpuid(), myproc()->pid, n);
+	return 0;
 }
 
 int
@@ -43,49 +38,30 @@ sys_getpid(void)
 }
 
 int
-sys_sbrk(void)
+sys_exit(void)
 {
-	int addr;
-	int n;
-
-	if (argint(0, &n) < 0)
-		return -1;
-	addr = myproc()->sz;
-	if (growproc(n) < 0)
-		return -1;
-	return addr;
+	exit();
+	return 0; // unreachable
 }
 
 int
-sys_sleep(void)
+sys_wait(void)
 {
-	int n;
-	u32 ticks0;
-
-	if (argint(0, &n) < 0)
-		return -1;
-	acquire(&tickslock);
-	ticks0 = ticks;
-	while (ticks - ticks0 < n) {
-		if (myproc()->killed) {
-			release(&tickslock);
-			return -1;
-		}
-		sleep(&ticks, &tickslock);
-	}
-	release(&tickslock);
-	return 0;
+	return wait();
 }
 
-// return how many clock tick interrupts have occurred
-// since start.
 int
-sys_uptime(void)
+sys_kill(int pid)
 {
-	u32 xticks;
+	if (pid < 0)
+		return -1;
 
-	acquire(&tickslock);
-	xticks = ticks;
-	release(&tickslock);
-	return xticks;
+	return kill(pid);
+}
+
+int
+sys_fork(void)
+{
+	cprintf("fork!\n");
+	return fork();
 }

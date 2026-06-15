@@ -1,13 +1,21 @@
+// x86_64 GDT
+struct gdt {			     // TODO fix magic no
+	struct segdesc seg[5];	     // normal segs
+	struct syssegdesc64 tss_seg; // tss
+} __attribute__((packed));
+
 // Per-CPU state
 struct cpu {
-	u8 apicid;		   // Local APIC ID
-	struct context *scheduler; // swtch() here to enter scheduler
-	struct taskstate ts;	   // Used by x86 to find stack for interrupt
-	struct segdesc gdt[NSEGS]; // x86 global descriptor table
-	volatile u32 started;	   // Has the CPU started?
-	int ncli;		   // Depth of pushcli nesting.
-	int intena;		   // Were interrupts enabled before pushcli?
-	struct proc *proc;	   // The process running on this cpu or null
+	struct cpu *this;
+	char *cur_kstack, *cur_ustack; // these are used by syscallasm.S
+	struct proc *proc;	       // The process running on this cpu or null
+	u8 apicid;		       // Local APIC ID
+	struct context *scheduler;     // swtch() here to enter scheduler
+	struct taskstate64 ts;	       // Used by x86 to find stack for interrupt
+	struct gdt gdt;
+	volatile u32 started; // Has the CPU started?
+	int ncli;	       // Depth of pushcli nesting.
+	int intena;	       // Were interrupts enabled before pushcli?
 };
 
 extern struct cpu cpus[NCPU];
@@ -24,24 +32,26 @@ extern int ncpu;
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
 struct context {
-	u32 edi;
-	u32 esi;
-	u32 ebx;
-	u32 ebp;
-	u32 eip;
+	u64 rbx;
+	u64 rbp;
+	u64 rdi;
+	u64 rsi;
+	// u64 rsp;
+	u64 r12, r13, r14, r15;
+	u64 rip;
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
 struct proc {
-	u32 sz;		    // Size of process memory (bytes)
+	struct trapframe *tf;	    // Trap frame for current syscall
+	u64 sz;			    // Size of process memory (bytes)
 	pde_t *pgdir;		    // Page table
 	char *kstack;		    // Bottom of kernel stack for this process
 	enum procstate state;	    // Process state
 	int pid;		    // Process ID
 	struct proc *parent;	    // Parent process
-	struct trapframe *tf;	    // Trap frame for current syscall
 	struct context *context;    // swtch() here to run process
 	void *chan;		    // If non-zero, sleeping on chan
 	int killed;		    // If non-zero, have been killed

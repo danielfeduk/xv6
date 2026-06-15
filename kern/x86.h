@@ -47,30 +47,27 @@ stosl(void *addr, int data, int cnt)
 
 struct segdesc;
 
+struct desctr {
+	u16 lim;
+	u64 base;
+} __attribute__((packed));
+
 static inline void
-lgdt(struct segdesc *p, int size)
+lgdt(void *p, int size)
 {
-	volatile u16 pd[3];
+	volatile struct desctr pd = { size - 1, (u64)p };
 
-	pd[0] = size - 1;
-	pd[1] = (u32)p;
-	pd[2] = (u32)p >> 16;
-
-	asm volatile("lgdt (%0)" : : "r"(pd));
+	asm volatile("lgdt %0" : : "m"(pd));
 }
 
 struct gatedesc;
 
 static inline void
-lidt(struct gatedesc *p, int size)
+lidt(struct gatedesc64 *p, int size)
 {
-	volatile u16 pd[3];
+	volatile struct desctr pd = { size - 1, (u64)p };
 
-	pd[0] = size - 1;
-	pd[1] = (u32)p;
-	pd[2] = (u32)p >> 16;
-
-	asm volatile("lidt (%0)" : : "r"(pd));
+	asm volatile("lidt %0" : : "m"(pd));
 }
 
 static inline void
@@ -79,12 +76,12 @@ ltr(u16 sel)
 	asm volatile("ltr %0" : : "r"(sel));
 }
 
-static inline u32
-readeflags(void)
+static inline u64
+readrflags(void)
 {
-	u32 eflags;
-	asm volatile("pushfl; popl %0" : "=r"(eflags));
-	return eflags;
+	u64 rflags;
+	asm volatile("pushfq; popq %0" : "=r"(rflags));
+	return rflags;
 }
 
 static inline void
@@ -115,53 +112,66 @@ xchg(volatile u32 *addr, u32 newval)
 	return result;
 }
 
-static inline u32
+static inline u64
 rcr2(void)
 {
-	u32 val;
-	asm volatile("movl %%cr2,%0" : "=r"(val));
+	u64 val;
+	asm volatile("movq %%cr2,%0" : "=r"(val));
 	return val;
 }
 
 static inline void
-lcr3(u32 val)
+lcr3(u64 val)
 {
-	asm volatile("movl %0,%%cr3" : : "r"(val));
+	asm volatile("movq %0,%%cr3" : : "r"(val));
+}
+
+static inline u64
+rdmsr(u32 msr)
+{
+	u32 lo, hi;
+
+	asm volatile("rdmsr" : "=a"(lo), "=d"(hi) : "c"(msr));
+
+	return ((u64)hi << 32) | lo;
+}
+
+static inline void
+wrmsr(u32 msr, u64 val)
+{
+	u32 lo, hi;
+
+	lo = (u32)val;
+	hi = val >> 32;
+
+	asm volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
 }
 
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
+
 struct trapframe {
-	// registers as pushed by pusha
-	u32 edi;
-	u32 esi;
-	u32 ebp;
-	u32 oesp; // useless & ignored
-	u32 ebx;
-	u32 edx;
-	u32 ecx;
-	u32 eax;
-
-	// rest of trap frame
-	u16 gs;
-	u16 padding1;
-	u16 fs;
-	u16 padding2;
-	u16 es;
-	u16 padding3;
-	u16 ds;
-	u16 padding4;
-	u32 trapno;
-
-	// below here defined by x86 hardware
-	u32 err;
-	u32 eip;
-	u16 cs;
-	u16 padding5;
-	u32 eflags;
-
-	// below here only when crossing rings, such as from user to kernel
-	u32 esp;
-	u16 ss;
-	u16 padding6;
+	u64 r15;
+	u64 r14;
+	u64 r13;
+	u64 r12;
+	u64 r11;
+	u64 r10;
+	u64 r9;
+	u64 r8;
+	u64 rdi;
+	u64 rsi;
+	u64 rbp;
+	u64 rbx;
+	u64 rdx;
+	u64 rcx;
+	u64 rax;
+	// below here defined by x86_64
+	u64 trapno;
+	u64 errcode;
+	u64 rip;
+	u64 cs;
+	u64 rflags;
+	u64 rsp;
+	u64 ss;
 };
