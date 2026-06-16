@@ -158,7 +158,7 @@ userinit(void)
 
 	p->sz = PGSIZE;
 
-	safestrcpy(p->name, "initcode", sizeof(p->name));
+	strlcpy(p->name, "initcode", sizeof(p->name));
 	// p->cwd = namei("/");
 
 	// make a dup init process.
@@ -230,7 +230,7 @@ fork(void)
 	np->cwd = idup(curproc->cwd);
 	*/
 
-	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+	strlcpy(np->name, curproc->name, sizeof(curproc->name));
 
 	pid = np->pid;
 

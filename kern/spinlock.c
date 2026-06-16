@@ -8,6 +8,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "string.h"
 
 void
 initlock(struct spinlock *lk, char *name)

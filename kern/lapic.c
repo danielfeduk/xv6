@@ -9,6 +9,7 @@
 #include "traps.h"
 #include "mmu.h"
 #include "x86.h"
+#include "string.h"
 
 // Local APIC registers, divided by 4 for use as u32[] indices.
 #define ID (0x0020 / 4)	   // ID

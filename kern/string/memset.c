@@ -1,7 +1,9 @@
+#include "../string.h"
 #include "string.h"
 #include <stdint.h>
 
-void *memset(void *dest, int c, size_t n)
+void *
+memset(void *dest, int c, size_t n)
 {
 	unsigned char *s = dest;
 	size_t k;
@@ -10,18 +12,22 @@ void *memset(void *dest, int c, size_t n)
 	 * conditional ensures that all the subsequently used
 	 * offsets are well-defined and in the dest region. */
 
-	if (!n) return dest;
+	if (!n)
+		return dest;
 	s[0] = c;
-	s[n-1] = c;
-	if (n <= 2) return dest;
+	s[n - 1] = c;
+	if (n <= 2)
+		return dest;
 	s[1] = c;
 	s[2] = c;
-	s[n-2] = c;
-	s[n-3] = c;
-	if (n <= 6) return dest;
+	s[n - 2] = c;
+	s[n - 3] = c;
+	if (n <= 6)
+		return dest;
 	s[3] = c;
-	s[n-4] = c;
-	if (n <= 8) return dest;
+	s[n - 4] = c;
+	if (n <= 8)
+		return dest;
 
 	/* Advance pointer to align it at a 4-byte boundary,
 	 * and truncate n to a multiple of 4. The previous code
@@ -33,7 +39,8 @@ void *memset(void *dest, int c, size_t n)
 	n -= k;
 	n &= -4;
 
-	for (; n; n--, s++) *s = c;
-	
+	for (; n; n--, s++)
+		*s = c;
+
 	return dest;
 }
