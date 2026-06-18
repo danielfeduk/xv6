@@ -289,14 +289,8 @@ switchkvm(void)
 void
 inituvm(pde_t *pgdir, char *init, u32 sz)
 {
-	char *mem;
-
-	if (sz >= PGSIZE)
-		panic("inituvm: more than a page");
-	mem = kalloc();
-	memset(mem, 0, PGSIZE);
-	mappages(pgdir, 0, PGSIZE, CM2P(mem), PTE_W | PTE_U);
-	memmove(mem, init, sz);
+	amappages(pgdir, 0, sz, PTE_W | PTE_U);
+	crossvm_write(pgdir, NULL, init, sz);
 }
 
 // Given a parent process's page table, create a copy

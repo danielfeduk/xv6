@@ -137,6 +137,8 @@ setupproc(struct proc *p, struct trapframe *tf)
 	crossvm_write(p->pgdir, p->context, &c, sizeof *p->context);
 }
 
+#define INITSTACKSZ 4096
+
 // Set up first user process.
 void
 userinit(void)
@@ -150,9 +152,9 @@ userinit(void)
 	if ((p->pgdir = setupkvm()) == 0) {
 		panic("userinit: out of memory?");
 	}
-	inituvm(p->pgdir, _binary_initcode_start, (u64)_binary_initcode_size);
+	inituvm(p->pgdir, _binary_initcode_start, (u64)_binary_initcode_size+INITSTACKSZ);
 
-	struct trapframe tf = { .cs = (SEG_UCODE << 3) | DPL_USER, .ss = (SEG_UDATA << 3) | DPL_USER, .rflags = FL_IF, .rsp = PGSIZE, .rip = 0 };
+	struct trapframe tf = { .cs = (SEG_UCODE << 3) | DPL_USER, .ss = (SEG_UDATA << 3) | DPL_USER, .rflags = FL_IF, .rsp = (u64)_binary_initcode_size + INITSTACKSZ, .rip = 0 };
 
 	setupproc(p, &tf);
 
