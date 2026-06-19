@@ -85,9 +85,10 @@ entryother: entryother.S
 	$(OBJCOPY) -S -O binary -j .text bootblockother.o entryother
 	$(OBJDUMP) -S bootblockother.o > entryother.asm
 
-initcode: initcode.S
-	$(CC) $(CFLAGS) -nostdinc -I. -c initcode.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0 --image-base 0x0 -o initcode.out initcode.o
+initcode: initcode.c initrt.S
+	$(CC) $(CFLAGS) -nostdinc -c initcode.c
+	$(CC) $(CFLAGS) -nostdinc -c initrt.S
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0 --image-base 0x0 -o initcode.out initcode.o initrt.o
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
 
