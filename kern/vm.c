@@ -258,13 +258,13 @@ setupkvm(void)
 		switch (k->type) {
 		case PHYMAP:
 			if (mappages(pgdir, k->virt, k->phys_end - k->phys_start, (u64)k->phys_start, k->perm) < 0) {
-				// freevm(pgdir);
+				freevm(pgdir);
 				return 0;
 			}
 			break;
 		case KALLOC:
 			if (amappages(pgdir, k->virt, k->phys_end - k->phys_start, k->perm) < 0) {
-				// freevm(pgdir);
+				freevm(pgdir);
 				return 0;
 			}
 			break;
@@ -291,6 +291,37 @@ inituvm(pde_t *pgdir, char *init, u32 sz)
 {
 	amappages(pgdir, 0, sz, PTE_W | PTE_U);
 	crossvm_write(pgdir, NULL, init, sz);
+}
+
+static void
+freevm_help(pde_t *pt, enum plevel lvl) {
+	pde_t *x;
+	if (lvl != PTE && !(PTE_FLAGS(*pt) & PTE_PS))
+		for (int i = 0; i < NPDENTRIES; ++i) {
+			if(x = walkpgdir_help(pt, i, false)) {
+				freevm_help(x, lvl + 1);
+			}
+		}
+
+	kfree((char *)pt);
+}
+
+void
+freevm(pde_t *pgdir)
+{
+	struct kmap *k;
+
+	// free all KALLOC
+	for (k = kmap; k < &kmap[NELEM(kmap)]; k++) {
+		if(k->type == KALLOC) {
+			for(u64 v = (u64)k->virt; v < (k->phys_end -  k->phys_start); v += PGSIZE) {
+				u64 pa = vtrans(pgdir, (void *)v);
+				kfree(P2CM(pa));
+			}
+		} else continue;
+	}
+
+	freevm_help(pgdir, PML4E);
 }
 
 // Given a parent process's page table, create a copy
@@ -323,7 +354,7 @@ copyuvm(pde_t *pgdir, u32 sz)
 	return d;
 
 bad:
-	// freevm(d);
+	freevm(d);
 	return 0;
 }
 

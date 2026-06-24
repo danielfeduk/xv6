@@ -169,6 +169,8 @@ awk -F'\t' < $1 "
 
 		printf("\t\"#%d\",\t\t\t/* %d = %s */\n", \
 		    syscall, syscall, $3) > sysnames
+		printf("#define\tSYS_%s\t%d\n", \
+		    $3, syscall) > syshdr
 		syscall++
 		next
 	}

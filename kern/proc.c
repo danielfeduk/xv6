@@ -294,7 +294,7 @@ wait(void)
 				pid = p->pid;
 				// kfree(p->kstack);
 				p->kstack = 0;
-				// freevm(p->pgdir);
+				freevm(p->pgdir);
 				p->pid = 0;
 				p->parent = 0;
 				p->name[0] = 0;

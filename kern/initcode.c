@@ -6,6 +6,9 @@ int main()
 	if(!(n = fork())) {
 		debugprnt("hello");
 		exit();
+	} else {
+		wait();
+		debugprnt("done waiting");
+		while(1);
 	}
-	while(1);
 }
