@@ -25,6 +25,7 @@ main(void)
 	picinit();
 	ioapicinit();
 	consoleinit();
+	uartinit();
 	cprintf("lapicid %d firstcpu\n", lapicid());
 	kinit1(P2CM(V2P(end)), P2CM(PHYSTOP));
 	kvmalloc();

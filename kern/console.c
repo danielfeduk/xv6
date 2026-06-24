@@ -178,10 +178,11 @@ consputc(int c)
 			;
 	}
 
-	/*if(c == BACKSPACE){
+	if(c == BACKSPACE){
 		uartputc('\b'); uartputc(' '); uartputc('\b');
-	} else
-		uartputc(c);*/
+	} else {
+		uartputc(c);
+	}
 	cgaputc(c);
 }
 

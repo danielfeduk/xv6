@@ -41,7 +41,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -machine pc -d int -drive file=kern/xv6.img,index=0,media=disk,format=raw  -smp sockets=$(CPUS),cores=1,threads=1 -m 512 $(QEMUEXTRA)
+QEMUOPTS = -machine pc -drive file=kern/xv6.img,index=0,media=disk,format=raw  -smp sockets=$(CPUS),cores=1,threads=1 -m 512 -serial mon:stdio $(QEMUEXTRA)
 
 
 qemu: fs.img kern/xv6.img

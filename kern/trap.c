@@ -46,6 +46,10 @@ trap(struct trapframe *tf)
 		kbdintr();
 		lapiceoi();
 		break;
+	case T_IRQ0 + IRQ_COM1:
+		uartintr();
+		lapiceoi();
+		break;
 	default:
 		if(myproc() == 0 || (tf->cs & 3) == 0) {
 			cprintf("unexpected trap %d err %d from cpu %d rip %p (cr2=0x%p)\n", tf->trapno, tf->errcode, cpuid(), tf->rip, rcr2());
