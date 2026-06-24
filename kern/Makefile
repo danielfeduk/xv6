@@ -19,6 +19,9 @@ OBJS = \
        trap.o\
        vectors.o\
        vm.o\
+       file.o\
+       pipe.o\
+       sysfile.o
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -87,9 +90,9 @@ entryother: entryother.S
 	$(OBJDUMP) -S bootblockother.o > entryother.asm
 
 initcode: initcode.c initrt.S usys.o
-	$(CC) $(UCFLAGS) -nostdinc -c initcode.c
-	$(CC) $(UCFLAGS) -nostdinc -c initrt.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0 --image-base 0x0 -o initcode.out initcode.o initrt.o usys.o
+	$(CC) $(UCFLAGS) -c initcode.c
+	$(CC) $(UCFLAGS) -c initrt.S
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0 --image-base 0x0 -o initcode.out initcode.o initrt.o usys.o $(STRING)
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
 

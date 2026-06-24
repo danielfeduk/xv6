@@ -72,23 +72,25 @@ fileclose(struct file *f)
 
 	if (ff.type == FD_PIPE)
 		pipeclose(ff.pipe, ff.writable);
+	/*
 	else if (ff.type == FD_INODE) {
 		begin_op();
 		iput(ff.ip);
 		end_op();
 	}
+	*/
 }
 
 // Get metadata about file f.
 int
 filestat(struct file *f, struct stat *st)
 {
-	if (f->type == FD_INODE) {
+	/*if (f->type == FD_INODE) {
 		ilock(f->ip);
 		stati(f->ip, st);
 		iunlock(f->ip);
 		return 0;
-	}
+	}*/
 	return -1;
 }
 
@@ -102,13 +104,13 @@ fileread(struct file *f, char *addr, int n)
 		return -1;
 	if (f->type == FD_PIPE)
 		return piperead(f->pipe, addr, n);
-	if (f->type == FD_INODE) {
+	/*if (f->type == FD_INODE) {
 		ilock(f->ip);
 		if ((r = readi(f->ip, addr, f->off, n)) > 0)
 			f->off += r;
 		iunlock(f->ip);
 		return r;
-	}
+	}*/
 	panic("fileread");
 }
 
@@ -122,7 +124,7 @@ filewrite(struct file *f, char *addr, int n)
 		return -1;
 	if (f->type == FD_PIPE)
 		return pipewrite(f->pipe, addr, n);
-	if (f->type == FD_INODE) {
+	/*if (f->type == FD_INODE) {
 		// write a few blocks at a time to avoid exceeding
 		// the maximum log transaction size, including
 		// i-node, indirect block, allocation blocks,
@@ -150,6 +152,6 @@ filewrite(struct file *f, char *addr, int n)
 			i += r;
 		}
 		return i == n ? n : -1;
-	}
+	}*/
 	panic("filewrite");
 }

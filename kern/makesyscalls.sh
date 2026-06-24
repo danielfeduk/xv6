@@ -102,6 +102,8 @@ awk -F'\t' < $1 "
 		printf ".local sysent\n\n" > sysasm
 		
 		printf " * created from%s\n */\n\n", $0 > sysdhdr
+		printf "#include \"types.h\"\n" > sysdhdr
+		printf "#include \"stat.h\"\n" > sysdhdr
 
 		next
 	}

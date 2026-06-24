@@ -30,6 +30,7 @@ main(void)
 	kvmalloc();
 	tvinit();
 	idtinit();
+	fileinit();
 	startothers();
 	kinit2(NULL, NULL);
 	userinit();

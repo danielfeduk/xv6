@@ -63,7 +63,6 @@ static struct proc *
 allocproc(void)
 {
 	struct proc *p;
-	// char *sp;
 
 	acquire(&ptable.lock);
 
@@ -80,32 +79,7 @@ found:
 
 	release(&ptable.lock);
 
-	/*
-	// TODO kernel stack should be mapped elsewhere, extend kmaps
-	// Allocate kernel stack.
-	if((p->kstack = (char*)KSTACKBASE) == 0){
-		p->state = UNUSED;
-		return 0;
-	}
-	*/
 	p->kstack = (char *)KSTACKBASE;
-	/*
-	sp = p->kstack + KSTACKSIZE;
-
-	// Leave room for trap frame.
-	sp -= sizeof *p->tf;
-	p->tf = (struct trapframe*)sp;
-
-	// Set up new context to start executing at forkret,
-	// which returns to trapret.
-	sp -= 8;
-	*(u64*)sp = (u64)trapret;
-
-	sp -= sizeof *p->context;
-	p->context = (struct context*)sp;
-	memset(p->context, 0, sizeof *p->context);
-	p->context->rip = (u64)forkret;
-	*/
 	cprintf("new proc: %d\n", p->pid);
 
 	return p;
@@ -208,10 +182,11 @@ fork(void)
 	ntf.rax = 0;
 	setupproc(np, &ntf);
 
-	/*
+	
 	for(i = 0; i < NOFILE; i++)
 		if(curproc->ofile[i])
 			np->ofile[i] = filedup(curproc->ofile[i]);
+	/*
 	np->cwd = idup(curproc->cwd);
 	*/
 
@@ -240,15 +215,16 @@ exit(int status)
 
 	if (curproc == initproc)
 		panic("init exiting");
-	/*
-	  // Close all open files.
-	  for(fd = 0; fd < NOFILE; fd++){
-	    if(curproc->ofile[fd]){
-	      fileclose(curproc->ofile[fd]);
-	      curproc->ofile[fd] = 0;
-	    }
-	  }
+	
+	// Close all open files.
+	for(fd = 0; fd < NOFILE; fd++){
+		if(curproc->ofile[fd]){
+			fileclose(curproc->ofile[fd]);
+			curproc->ofile[fd] = 0;
+		}	
+	}
 
+	/*
 	  begin_op();
 	  iput(curproc->cwd);
 	  end_op();

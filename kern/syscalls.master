@@ -29,15 +29,17 @@
 1	STD	fork	int	(void)
 2	STD	exit	void	(int)
 3	STD	wait	int	(int *)
-4	UNIMPL	pipe
-5	UNIMPL	read
+4	STD	pipe	int	(int *)
+5	STD	read	int	(int, int, char *)
 6	STD	kill	int	(int)
 7	UNIMPL	exec
-8	UNIMPL	fstat
-9	UNIMPL	nosys
-10	UNIMPL	nosys
+8	STD	fstat	int	(int, struct stat *)
+9	UNIMPL	chdir
+10	STD	dup	int	(int)
 11	STD	getpid	int	(void)
 12	UNIMPL	sbrk
 13	STD	sleep	int	(int)
 14	STD	uptime	int	(void)
 15	STD	debugprnt2	int	(unsigned long)
+16	STD	write	int	(int, int, char *)
+17	STD	close	int	(int)

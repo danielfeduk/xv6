@@ -16,24 +16,18 @@
 #include "file.h"
 #include "fcntl.h"
 
-// Fetch the nth word-sized system call argument as a file descriptor
-// and return both the descriptor and the corresponding struct file.
-static int
-argfd(int n, int *pfd, struct file **pf)
+struct file *
+argfile(int fd)
 {
-	int fd;
 	struct file *f;
 
-	if (argint(n, &fd) < 0)
-		return -1;
-	if (fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
-		return -1;
-	if (pfd)
-		*pfd = fd;
-	if (pf)
-		*pf = f;
-	return 0;
+	if (fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0) {
+		return NULL;
+	}
+
+	return f;
 }
+
 
 // Allocate a file descriptor for the given file.
 // Takes over file reference from caller on success.
@@ -53,68 +47,83 @@ fdalloc(struct file *f)
 }
 
 int
-sys_dup(void)
+sys_dup(int fd)
 {
 	struct file *f;
-	int fd;
 
-	if (argfd(0, 0, &f) < 0)
+	if (!(f = argfile(fd))) {
 		return -1;
-	if ((fd = fdalloc(f)) < 0)
+	}
+	if ((fd = fdalloc(f)) < 0) {
 		return -1;
+	}
 	filedup(f);
 	return fd;
 }
 
 int
-sys_read(void)
+sys_read(int fd, int n, char *p)
 {
 	struct file *f;
-	int n;
-	char *p;
 
-	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+	if (!(f = argfile(fd))) {
 		return -1;
+	}
+
+	if(!(p = userbuf(p, n))) {
+		return -1;
+	}
+
 	return fileread(f, p, n);
 }
 
 int
-sys_write(void)
+sys_write(int fd, int n, char *p)
 {
 	struct file *f;
-	int n;
-	char *p;
 
-	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+	if (!(f = argfile(fd))) {
 		return -1;
+	}
+
+	if(!(p = userbuf(p, n))) {
+		return -1;
+	}
+
 	return filewrite(f, p, n);
 }
 
 int
-sys_close(void)
+sys_close(int fd)
 {
-	int fd;
 	struct file *f;
 
-	if (argfd(0, &fd, &f) < 0)
+	if (!(f = argfile(fd))) {
 		return -1;
+	}
+
 	myproc()->ofile[fd] = 0;
 	fileclose(f);
 	return 0;
 }
 
 int
-sys_fstat(void)
+sys_fstat(int fd, struct stat *st)
 {
 	struct file *f;
-	struct stat *st;
 
-	if (argfd(0, 0, &f) < 0 || argptr(1, (void *)&st, sizeof(*st)) < 0)
+	if (!(f = argfile(fd))) {
 		return -1;
+	}
+	if (!(st = userbuf(st, sizeof(*st)))) {
+		return -1;
+	}
+
 	return filestat(f, st);
 }
 
 // Create the path new as a link to the same inode as old.
+/*
 int
 sys_link(void)
 {
@@ -414,19 +423,20 @@ sys_exec(void)
 	}
 	return exec(path, argv);
 }
-
+*/
 int
-sys_pipe(void)
+sys_pipe(int *fd)
 {
-	int *fd;
 	struct file *rf, *wf;
 	int fd0, fd1;
 
-	if (argptr(0, (void *)&fd, 2 * sizeof(fd[0])) < 0)
+	if (!(fd = userbuf(fd, 2 * sizeof(fd[0])))) {
 		return -1;
+	}
+
 	if (pipealloc(&rf, &wf) < 0)
 		return -1;
-	fd0 = -1;
+
 	if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
 		if (fd0 >= 0)
 			myproc()->ofile[fd0] = 0;

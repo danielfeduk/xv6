@@ -19,3 +19,4 @@ usys.h
 syscall.h
 syscall.c
 sysnames.c
+initcode.c
