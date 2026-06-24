@@ -106,7 +106,7 @@ int		pipewrite(struct pipe*, char*, int);
 
 // proc.c
 int		cpuid(void);
-void		exit(void);
+void		exit(int);
 int		fork(void);
 int		growproc(int);
 int		kill(int);
@@ -119,7 +119,7 @@ void		sched(void);
 void		setproc(struct proc*);
 void		sleep(void*, struct spinlock*);
 void		userinit(void);
-int		wait(void);
+int		wait(int*);
 void		wakeup(void*);
 void		yield(void);
 
@@ -140,14 +140,6 @@ void		acquiresleep(struct sleeplock*);
 void		releasesleep(struct sleeplock*);
 int		holdingsleep(struct sleeplock*);
 void		initsleeplock(struct sleeplock*, char*);
-
-// syscall.c
-int		argint(int, int*);
-int		argptr(int, char**, int);
-int		argstr(int, char**);
-int		fetchint(u32, int*);
-int		fetchstr(u32, char**);
-void		syscall(void);
 
 // timer.c
 void		timerinit(void);
@@ -178,6 +170,7 @@ void		switchkvm(void);
 int		copyout(pde_t*, u32, void*, u32);
 void		clearpteu(pde_t *pgdir, char *uva);
 void		crossvm_write(pde_t *, void *, void *, size_t);
+void*		userbuf(void *addr, size_t sz);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

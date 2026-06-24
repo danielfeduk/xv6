@@ -5,10 +5,12 @@ int main()
 	int n;
 	if(!(n = fork())) {
 		debugprnt("hello");
-		exit();
+		exit(0);
 	} else {
-		wait();
+		int s;
+		wait(&s);
 		debugprnt("done waiting");
+		debugprnt2(s);
 		while(1);
 	}
 }

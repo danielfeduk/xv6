@@ -53,7 +53,7 @@ trap(struct trapframe *tf)
 
 	// if process killed and in userspace, exit.
 	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER) {
-		exit();
+		exit(128);
 	}
 
 	if (myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0 + IRQ_TIMER && !(ticks % 1)) {
@@ -63,7 +63,7 @@ trap(struct trapframe *tf)
 
 	// process could have been killed when yielded
 	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER) {
-		exit();
+		exit(128);
 	}
 
 	return;

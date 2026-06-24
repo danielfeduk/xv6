@@ -61,16 +61,18 @@ sys_getpid(void)
 }
 
 int
-sys_exit(void)
+sys_exit(int status)
 {
-	exit();
+	exit(status);
 	return 0; // unreachable
 }
 
 int
-sys_wait(void)
+sys_wait(int *status)
 {
-	return wait();
+	int *s = userbuf(status, sizeof(int));
+	if(!s) return -1;
+	return wait(s);
 }
 
 int

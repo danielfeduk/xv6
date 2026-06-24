@@ -229,6 +229,17 @@ crossvm_write(pde_t *pgdir, void *fva, void *va, size_t sz)
 	}
 }
 
+void
+*userbuf(void *addr, size_t sz)
+{
+	struct proc *curproc = myproc();
+
+	if(addr >= curproc->sz || addr + sz > curproc->sz) {
+		return NULL;
+	}
+	return addr;
+}
+
 /*
  * This is all a mess! We need a serious kmap flexible kmap system TODO
  */

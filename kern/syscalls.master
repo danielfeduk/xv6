@@ -27,9 +27,8 @@
 
 0	STD	debugprnt	int	(const char *)
 1	STD	fork	int	(void)
-; this is going to get replaced with a normal exit
-2	STD	exit	void	(void)
-3	STD	wait	int	(void)
+2	STD	exit	void	(int)
+3	STD	wait	int	(int *)
 4	UNIMPL	pipe
 5	UNIMPL	read
 6	STD	kill	int	(int)
