@@ -14,3 +14,8 @@ kernel
 kernelmemfs
 mkfs
 .gdbinit
+usys.S
+usys.h
+syscall.h
+syscall.c
+sysnames.c

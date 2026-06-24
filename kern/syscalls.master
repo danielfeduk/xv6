@@ -1,0 +1,44 @@
+	@(#)syscalls.master	8.1 (Berkeley) 6/16/93
+; System call name/number master file.
+; Processed to created init_sysent.c, syscalls.c and syscall.h.
+
+; Columns: number type nargs name altname/comments
+;	number	system call number, must be in order
+;	type	one of STD, OBSOL, UNIMPL, COMPAT
+;	nargs	number of arguments
+;	name	name of syscall routine
+;	altname	name of system call if different
+;		for UNIMPL/OBSOL, name continues with comments
+
+; types:
+;	STD	always included
+;	COMPAT	included on COMPAT #ifdef
+;	LIBCOMPAT included on COMPAT #ifdef, and placed in syscall.h
+;	OBSOL	obsolete, not included in system, only specifies name
+;	UNIMPL	not implemented, placeholder only
+
+; #ifdef's, etc. may be included, and are copied to the output files.
+
+; Reserved/unimplemented system calls in the range 0-150 inclusive
+; are reserved for use in future Berkeley releases.
+; Additional system calls implemented in vendor and other
+; redistributions should be placed in the reserved range at the end
+; of the current calls.
+
+0	STD	debugprnt	int	(const char *)
+1	STD	fork	int	(void)
+; this is going to get replaced with a normal exit
+2	STD	exit	void	(void)
+3	STD	wait	int	(void)
+4	UNIMPL	pipe
+5	UNIMPL	read
+6	STD	kill	int	(int)
+7	UNIMPL	exec
+8	UNIMPL	fstat
+9	UNIMPL	nosys
+10	UNIMPL	nosys
+11	STD	getpid	int	(void)
+12	UNIMPL	sbrk
+13	STD	sleep	int	(int)
+14	STD	uptime	int	(void)
+15	STD	debugprnt2	int	(unsigned long)

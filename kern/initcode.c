@@ -1,7 +1,11 @@
-int prnt(char *);
+#include "usys.h"
 
 int main()
 {
-	prnt("hi from c!\n");
+	int n;
+	if(!(n = fork())) {
+		debugprnt("hello");
+		exit();
+	}
 	while(1);
 }

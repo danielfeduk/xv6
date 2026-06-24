@@ -146,41 +146,25 @@ userinit(void)
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
 
+	const size_t sz = PGROUNDUP((u64)_binary_initcode_size) + INITSTACKSZ;
+
 	p = allocproc();
 
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0) {
 		panic("userinit: out of memory?");
 	}
-	inituvm(p->pgdir, _binary_initcode_start, (u64)_binary_initcode_size+INITSTACKSZ);
+	inituvm(p->pgdir, _binary_initcode_start, sz);
 
-	struct trapframe tf = { .cs = (SEG_UCODE << 3) | DPL_USER, .ss = (SEG_UDATA << 3) | DPL_USER, .rflags = FL_IF, .rsp = (u64)_binary_initcode_size + INITSTACKSZ, .rip = 0 };
+	struct trapframe tf = { .cs = (SEG_UCODE << 3) | DPL_USER, .ss = (SEG_UDATA << 3) | DPL_USER, .rflags = FL_IF, .rsp = sz, .rip = 0 };
 
 	setupproc(p, &tf);
 
-	p->sz = PGSIZE;
+	p->sz = sz;
 
 	strlcpy(p->name, "initcode", sizeof(p->name));
 	// p->cwd = namei("/");
 
-	// make a dup init process.
-	/*
-		struct proc *q;
-		q = allocproc();
-		if((q->pgdir = setupkvm()) == 0) {
-			panic("userinit: out of memory?");
-		}
-		inituvm(q->pgdir, _binary_initcode_start, (u64)_binary_initcode_size);
-		q->sz = PGSIZE;
-		memset(q->tf, 0, sizeof(*q->tf));
-		q->tf->cs = (SEG_UCODE << 3) | DPL_USER;
-		q->tf->ss = (SEG_UDATA << 3) | DPL_USER;
-		q->tf->rflags = FL_IF;
-		q->tf->rsp = PGSIZE;
-		q->tf->rip = 0;		// beginning of initcode.S
-
-		safestrcpy(p->name, "twincode", sizeof(p->name));
-	*/
 	// this assignment to p->state lets other cores
 	// run this process. the acquire forces the above
 	// writes to be visible, and the lock is also needed
@@ -188,7 +172,6 @@ userinit(void)
 	acquire(&ptable.lock);
 
 	p->state = RUNNABLE;
-	//	q->state = RUNNABLE;
 
 	release(&ptable.lock);
 }

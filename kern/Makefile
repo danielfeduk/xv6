@@ -66,6 +66,7 @@ endif
 include ../config.mk
 CFLAGS+= -mcmodel=large -fno-omit-frame-pointer
 BOOTCFLAGS= --target=x86_64-elf -m32 -fno-pic -static -fno-builtin -fno-strict-aliasing -Oz -Wall -ggdb -MD -mno-sse -fno-omit-frame-pointer -fno-stack-protector
+UCFLAGS=$(CFLAGS) -mcmodel=small
 
 xv6.img: bootblock kernel
 	dd if=/dev/zero of=xv6.img count=10000
@@ -85,12 +86,16 @@ entryother: entryother.S
 	$(OBJCOPY) -S -O binary -j .text bootblockother.o entryother
 	$(OBJDUMP) -S bootblockother.o > entryother.asm
 
-initcode: initcode.c initrt.S
-	$(CC) $(CFLAGS) -nostdinc -c initcode.c
-	$(CC) $(CFLAGS) -nostdinc -c initrt.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0 --image-base 0x0 -o initcode.out initcode.o initrt.o
+initcode: initcode.c initrt.S usys.o
+	$(CC) $(UCFLAGS) -nostdinc -c initcode.c
+	$(CC) $(UCFLAGS) -nostdinc -c initrt.S
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0 --image-base 0x0 -o initcode.out initcode.o initrt.o usys.o
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
+
+SYSGEN= usys.S usys.h syscall.h syscall.c sysnames.c
+$(SYSGEN): syscalls.master makesyscalls.sh
+	./makesyscalls.sh syscalls.master
 
 kernel: $(OBJS) entry.o  kernel.ld entryother initcode
 	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary entryother initcode
@@ -104,4 +109,4 @@ vectors.S: vectors
 
 clean: 
 	rm -f *.o *.d *.asm *.sym vectors.S bootblock entryother \
-	initcode initcode.out kernel kernelmemfs xv6.img xv6memfs.img $(OBJS)
+	initcode initcode.out kernel kernelmemfs xv6.img xv6memfs.img $(OBJS) $(SYSGEN)

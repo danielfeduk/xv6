@@ -7,6 +7,12 @@
 #include "proc.h"
 
 int
+sys_nosys(void)
+{
+	return -1;
+}
+
+int
 sys_uptime(void)
 {
 	u64 xticks;
@@ -38,7 +44,6 @@ int
 sys_debugprnt(const char *str)
 {
 	cprintf("cpu %d proc %d says: %s\n", cpuid(), myproc()->pid, str);
-	// panic("um what if we panic here");
 	return 0;
 }
 

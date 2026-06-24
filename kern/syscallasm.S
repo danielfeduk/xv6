@@ -58,7 +58,8 @@ movq %rsp, (%rcx)
 
 movq %r10, %rcx # this will be mirrored in libc
 
-cmpq $NSYSCALL, %rax
+movabsq $nsyscall, %rbx
+cmpq (%rbx), %rax
 jae bad_no 
 
 movabs $syscalls, %rbx
